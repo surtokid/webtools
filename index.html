@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Code Previewer & Playground - Uji & Demo Index.html</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            editor: {
+              bg: '#181824',
+              panel: '#1f1f2e',
+              border: '#2e2e42',
+              active: '#2c2c3e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #181824;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #393952;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #505072;
+    }
+
+    /* Editor Line Numbers and Code Area Sync */
+    .code-area-container {
+      position: relative;
+      display: flex;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      line-height: 20px;
+    }
+
+    #lineNumbers {
+      user-select: none;
+      min-width: 45px;
+      padding: 12px 6px 12px 12px;
+      text-align: right;
+      color: #636384;
+      background-color: #151520;
+      border-right: 1px solid #28283c;
+      overflow: hidden;
+      white-space: pre-line;
+    }
+
+    #codeEditor {
+      flex: 1;
+      min-height: 100%;
+      background: transparent;
+      color: #e2e8f0;
+      padding: 12px;
+      border: none;
+      outline: none;
+      resize: none;
+      white-space: pre;
+      overflow-wrap: normal;
+      overflow-x: auto;
+      tab-size: 2;
+    }
+
+    /* Viewport Simulator Frame Wrapper */
+    .viewport-container {
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Splitter Handle */
+    .resizer {
+      cursor: col-resize;
+      transition: background-color 0.15s;
+    }
+    .resizer:hover, .resizer.dragging {
+      background-color: #6366f1;
+    }
+
+    /* Toast Notification Animation */
+    @keyframes slideUpFade {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .animate-toast {
+      animation: slideUpFade 0.25s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="h-full bg-[#11111a] text-slate-200 font-sans flex flex-col overflow-hidden select-none">
+
+  <header class="h-14 border-b border-[#28283c] bg-[#161622] px-4 flex items-center justify-between z-20 shrink-0">
+    <!-- Brand & Status -->
+    <div class="flex items-center space-x-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+        <i class="fa-solid fa-code text-sm"></i>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="font-bold text-sm tracking-tight text-white">IndexRunner</span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 font-semibold border border-indigo-500/20">Playground</span>
+        </div>
+        <p class="text-[11px] text-slate-400 hidden sm:block">Sandbox Viewer & Tester File index.html</p>
+      </div>
+    </div>
+
+    <!-- Quick Action Templates & Actions -->
+    <div class="flex items-center space-x-2">
+      <!-- Preset Demo Selector -->
+      <div class="relative hidden md:flex items-center">
+        <label for="templateSelect" class="text-xs text-slate-400 mr-2 flex items-center gap-1">
+          <i class="fa-solid fa-wand-magic-sparkles text-amber-400 text-[11px]"></i> Demo:
+        </label>
+        <select id="templateSelect" class="bg-[#1f1f2e] border border-[#2e2e42] text-xs text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 cursor-pointer">
+          <option value="empty">-- Kanvas Kosong --</option>
+          <option value="landing" selected>1. Landing Page Modern</option>
+          <option value="counter">2. Kasir Mini / POS Simple</option>
+          <option value="calculator">3. Kalkulator Glassmorphism</option>
+          <option value="game">4. Mini Canvas Game (Dodge Star)</option>
+        </select>
+      </div>
+
+      <!-- File Upload & Download -->
+      <label class="cursor-pointer bg-[#242436] hover:bg-[#2e2e44] text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-[#34344c] flex items-center gap-1.5 transition">
+        <i class="fa-solid fa-folder-open text-indigo-400"></i>
+        <span class="hidden sm:inline">Unggah</span>
+        <input type="file" id="fileInput" accept=".html,.htm" class="hidden">
+      </label>
+
+      <button id="btnDownload" class="bg-[#242436] hover:bg-[#2e2e44] text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-[#34344c] flex items-center gap-1.5 transition" title="Unduh file saat ini sebagai index.html">
+        <i class="fa-solid fa-download text-emerald-400"></i>
+        <span class="hidden sm:inline">Unduh</span>
+      </button>
+
+      <div class="h-5 w-[1px] bg-[#28283c] mx-1"></div>
+
+      <!-- Run Action -->
+      <button id="btnRun" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs px-3.5 py-1.5 rounded-lg shadow-md shadow-indigo-600/30 flex items-center gap-1.5 transition active:scale-95">
+        <i class="fa-solid fa-play text-[10px]"></i>
+        <span>Jalankan</span>
+      </button>
+
+      <!-- Auto Run Toggle -->
+      <label class="flex items-center space-x-1.5 cursor-pointer ml-1 select-none" title="Jalankan otomatis saat kode berubah">
+        <input type="checkbox" id="toggleAutoRun" checked class="w-3.5 h-3.5 accent-indigo-500 rounded bg-[#1f1f2e] cursor-pointer">
+        <span class="text-[11px] text-slate-300 hidden lg:inline">Live Sync</span>
+      </label>
+    </div>
+  </header>
+
+  <main class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+
+    <!-- LEFT PANEL: CODE EDITOR -->
+    <section id="editorPanel" class="w-full md:w-1/2 flex flex-col bg-[#181824] border-r border-[#28283c] h-1/2 md:h-full z-10">
+      <!-- Editor Top Toolbar -->
+      <div class="h-10 bg-[#161622] border-b border-[#28283c] px-3 flex items-center justify-between text-xs shrink-0">
+        <div class="flex items-center space-x-1.5">
+          <div class="flex items-center space-x-2 bg-[#202030] px-3 py-1 rounded-md border border-[#2e2e42] text-slate-200">
+            <i class="fa-brands fa-html5 text-orange-500 text-sm"></i>
+            <span class="font-medium text-[11px] tracking-wide">index.html</span>
+          </div>
+          <span id="codeLengthBadge" class="text-[10px] text-slate-500 ml-2">0 karakter</span>
+        </div>
+
+        <div class="flex items-center space-x-1">
+          <button id="btnFormat" class="p-1.5 text-slate-400 hover:text-white hover:bg-[#26263a] rounded transition" title="Rapikan / Indentasi Kode">
+            <i class="fa-solid fa-align-left text-xs"></i>
+          </button>
+          <button id="btnCopy" class="p-1.5 text-slate-400 hover:text-white hover:bg-[#26263a] rounded transition" title="Salin Seluruh Kode">
+            <i class="fa-regular fa-copy text-xs"></i>
+          </button>
+          <button id="btnClear" class="p-1.5 text-slate-400 hover:text-red-400 hover:bg-[#26263a] rounded transition" title="Bersihkan Editor">
+            <i class="fa-regular fa-trash-can text-xs"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Textarea & Line Counter -->
+      <div class="flex-1 flex overflow-hidden relative">
+        <div class="code-area-container flex-1 h-full overflow-hidden">
+          <div id="lineNumbers">1</div>
+          <textarea id="codeEditor" spellcheck="false" placeholder="<!-- Tempelkan atau tulis kode index.html kamu di sini (mendukung HTML, <style>, dan <script>) -->"></textarea>
+        </div>
+      </div>
+
+      <!-- Editor Footer Status Info -->
+      <div class="h-7 bg-[#13131d] border-t border-[#232336] px-3 flex items-center justify-between text-[11px] text-slate-500 shrink-0 font-mono">
+        <div class="flex items-center space-x-3">
+          <span>Baris: <span id="lineCount" class="text-slate-400">1</span></span>
+          <span>Tab: 2 Spaces</span>
+        </div>
+        <div class="flex items-center space-x-2 text-[10px]">
+          <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Ready to execute</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESIZE HANDLE (Desktop Splitter) -->
+    <div id="resizer" class="hidden md:block w-1.5 bg-[#252538] hover:bg-indigo-500 cursor-col-resize z-20 shrink-0 transition-colors"></div>
+
+    <!-- RIGHT PANEL: PREVIEW & CONSOLE -->
+    <section id="previewPanel" class="w-full md:w-1/2 flex flex-col bg-[#0d0d14] h-1/2 md:h-full overflow-hidden">
+      <!-- Preview Header Controls -->
+      <div class="h-10 bg-[#161622] border-b border-[#28283c] px-3 flex items-center justify-between text-xs shrink-0">
+        
+        <!-- Viewport Mode Buttons -->
+        <div class="flex items-center space-x-1 bg-[#1f1f2e] p-0.5 rounded-lg border border-[#2e2e42]">
+          <button class="viewport-btn active px-2 py-0.5 rounded text-[11px] font-medium bg-indigo-600 text-white transition flex items-center gap-1" data-viewport="100%">
+            <i class="fa-solid fa-desktop text-[10px]"></i> Desktop
+          </button>
+          <button class="viewport-btn px-2 py-0.5 rounded text-[11px] font-medium text-slate-400 hover:text-white transition flex items-center gap-1" data-viewport="768px">
+            <i class="fa-solid fa-tablet-screen-button text-[10px]"></i> Tablet
+          </button>
+          <button class="viewport-btn px-2 py-0.5 rounded text-[11px] font-medium text-slate-400 hover:text-white transition flex items-center gap-1" data-viewport="375px">
+            <i class="fa-solid fa-mobile-screen-button text-[10px]"></i> Ponsel
+          </button>
+        </div>
+
+        <!-- Frame Action Tools -->
+        <div class="flex items-center space-x-1">
+          <button id="btnReloadPreview" class="p-1.5 text-slate-400 hover:text-white hover:bg-[#252538] rounded transition" title="Muat Ulang Preview">
+            <i class="fa-solid fa-arrows-rotate text-xs"></i>
+          </button>
+          <button id="btnNewTab" class="p-1.5 text-slate-400 hover:text-white hover:bg-[#252538] rounded transition" title="Buka di Tab Baru">
+            <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+          </button>
+          <button id="btnFullscreen" class="p-1.5 text-slate-400 hover:text-white hover:bg-[#252538] rounded transition" title="Layar Penuh Preview">
+            <i class="fa-solid fa-expand text-xs"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Iframe Sandboxed Wrapper -->
+      <div id="previewWrapper" class="flex-1 bg-[#0b0b12] flex items-center justify-center p-2 overflow-auto relative">
+        <div id="viewportContainer" class="viewport-container w-full h-full bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col border border-[#28283c]">
+          <iframe 
+            id="previewFrame"
+            title="Preview Output"
+            class="w-full h-full border-0 bg-white"
+            sandbox="allow-scripts allow-modals allow-forms allow-same-origin allow-popups"
+          ></iframe>
+        </div>
+      </div>
+
+      <!-- In-App Console & Inspector Panel -->
+      <div id="consolePanel" class="h-36 bg-[#14141e] border-t border-[#28283c] flex flex-col shrink-0 transition-all duration-200">
+        <!-- Console Bar Header -->
+        <div class="h-8 bg-[#181826] border-b border-[#28283c] px-3 flex items-center justify-between text-xs select-none">
+          <div class="flex items-center space-x-2">
+            <button id="btnToggleConsole" class="flex items-center gap-1.5 font-semibold text-slate-300 hover:text-white text-[11px]">
+              <i id="consoleChevron" class="fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform"></i>
+              <span>Console Logs</span>
+            </button>
+            <span id="consoleCountBadge" class="bg-[#242436] text-[10px] text-slate-400 px-1.5 py-0.2 rounded-full border border-[#33334d]">0</span>
+          </div>
+
+          <div class="flex items-center space-x-1">
+            <button id="btnClearConsole" class="text-[11px] text-slate-400 hover:text-slate-200 px-2 py-0.5 rounded hover:bg-[#252538] flex items-center gap-1">
+              <i class="fa-solid fa-ban text-[10px]"></i> Hapus
+            </button>
+          </div>
+        </div>
+
+        <!-- Console Log Output List -->
+        <div id="consoleOutput" class="flex-1 overflow-y-auto p-2 font-mono text-[11px] space-y-1 bg-[#101018]">
+          <div class="text-slate-500 italic select-none">Console siap menerima output log, warning, atau error dari kode...</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Notification Toast Container -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-10 opacity-0 pointer-events-none transition-all duration-200 bg-[#252538] text-white border border-[#3f3f5c] text-xs px-4 py-2.5 rounded-lg shadow-xl flex items-center gap-2">
+    <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+    <span id="toastMsg">Pesan</span>
+  </div>
+
+  <script>
+    /* PRESET DEMO TEMPLATES */
+    const PRESET_TEMPLATES = {
+      empty: `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dokumen Baru</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 0;
+      padding: 2rem;
+      background: #f8fafc;
+      color: #1e293b;
+    }
+    .card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      max-width: 500px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Halo Dunia! 👋</h2>
+    <p>Silakan tulis kode HTML, CSS, dan JavaScript kamu di sini.</p>
+  </div>
+</body>
+</html>`,
+
+      landing: `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inovasi Digital Modern</title>
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+  <!-- Navigasi -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center space-x-2">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white">
+        <i class="fa-solid fa-bolt text-sm"></i>
+      </div>
+      <span class="font-bold text-lg text-white tracking-tight">NovaTech</span>
+    </div>
+    <button onclick="kirimPesan()" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold px-4 py-1.5 rounded-lg text-sm transition">
+      Mulai Sekarang
+    </button>
+  </header>
+
+  <!-- Hero Section -->
+  <main class="flex-1 flex flex-col items-center justify-center text-center px-4 py-16 max-w-4xl mx-auto">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-medium mb-6">
+      <i class="fa-solid fa-sparkles"></i> Peluncuran Versi 3.0 Terbaru
+    </div>
+    <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
+      Bangun Masa Depan Web <br>
+      <span class="bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-400 bg-clip-text text-transparent">Lebih Cepat & Interaktif</span>
+    </h1>
+    <p class="text-slate-400 text-base md:text-lg max-w-2xl mb-8">
+      Platform terpadu untuk membaca, memvalidasi, dan menguji kode web langsung di peramban tanpa konfigurasi server yang rumit.
+    </p>
+
+    <div class="flex flex-wrap gap-4 justify-center">
+      <button onclick="console.log('User mengklik tombol pelajari lebih lanjut'); alertBox('Fitur segera hadir!')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-5 py-2.5 rounded-xl text-sm font-medium border border-slate-700 transition">
+        Lihat Dokumentasi
+      </button>
+      <button onclick="kirimPesan()" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-5 py-2.5 rounded-xl text-sm font-semibold transition">
+        Uji Coba Gratis &rarr;
+      </button>
+    </div>
+
+    <!-- Alert Banner Javascript -->
+    <div id="notice" class="hidden mt-8 p-3 rounded-xl bg-slate-800/90 border border-slate-700 text-sm text-cyan-300 max-w-md w-full"></div>
+  </main>
+
+  <script>
+    console.log("Halaman Landing Page NovaTech berhasil dimuat!");
+    function kirimPesan() {
+      const box = document.getElementById('notice');
+      box.innerText = "Terima kasih atas minat Anda! Uji coba telah aktif.";
+      box.classList.remove('hidden');
+      console.log("Event: Registrasi percobaan baru diterima.");
+    }
+    function alertBox(text) {
+      const box = document.getElementById('notice');
+      box.innerText = text;
+      box.classList.remove('hidden');
+    }
+  <\/script>
+</body>
+</html>`,
+
+      counter: `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kasir Mini Cepat</title>
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-100 p-4 md:p-8 font-sans">
+  <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+    <div class="bg-emerald-600 p-5 text-white flex justify-between items-center">
+      <div>
+        <h2 class="font-bold text-lg">Kasir Mini Toko Kopi</h2>
+        <p class="text-emerald-100 text-xs">Simulasi perhitungan pesanan</p>
+      </div>
+      <i class="fa-solid fa-mug-saucer text-2xl opacity-80"></i>
+    </div>
+
+    <div class="p-5 space-y-4">
+      <!-- Menu Item 1 -->
+      <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+        <div>
+          <div class="font-semibold text-slate-800 text-sm">Espresso Single</div>
+          <div class="text-xs text-slate-500">Rp 18.000</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="ubah('espresso', -1)" class="w-7 h-7 rounded-lg bg-slate-200 text-slate-700 font-bold hover:bg-slate-300">-</button>
+          <span id="qty-espresso" class="w-6 text-center font-bold text-sm">0</span>
+          <button onclick="ubah('espresso', 1)" class="w-7 h-7 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700">+</button>
+        </div>
+      </div>
+
+      <!-- Menu Item 2 -->
+      <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+        <div>
+          <div class="font-semibold text-slate-800 text-sm">Caffe Latte</div>
+          <div class="text-xs text-slate-500">Rp 24.000</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="ubah('latte', -1)" class="w-7 h-7 rounded-lg bg-slate-200 text-slate-700 font-bold hover:bg-slate-300">-</button>
+          <span id="qty-latte" class="w-6 text-center font-bold text-sm">0</span>
+          <button onclick="ubah('latte', 1)" class="w-7 h-7 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700">+</button>
+        </div>
+      </div>
+
+      <!-- Total & Action -->
+      <div class="pt-3 border-t border-slate-200">
+        <div class="flex justify-between items-center text-slate-600 text-sm mb-1">
+          <span>Jumlah Item:</span>
+          <span id="total-item" class="font-semibold">0 pcs</span>
+        </div>
+        <div class="flex justify-between items-center text-slate-900 font-bold text-lg mb-4">
+          <span>Total Bayar:</span>
+          <span id="total-bayar" class="text-emerald-600">Rp 0</span>
+        </div>
+        <button onclick="bayar()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl font-semibold text-sm transition">
+          Proses Transaksi
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const harga = { espresso: 18000, latte: 24000 };
+    const pesanan = { espresso: 0, latte: 0 };
+
+    function ubah(item, delta) {
+      pesanan[item] = Math.max(0, pesanan[item] + delta);
+      document.getElementById('qty-' + item).innerText = pesanan[item];
+      kalkulasi();
+    }
+
+    function kalkulasi() {
+      const totalItem = pesanan.espresso + pesanan.latte;
+      const totalHarga = (pesanan.espresso * harga.espresso) + (pesanan.latte * harga.latte);
+      document.getElementById('total-item').innerText = totalItem + ' pcs';
+      document.getElementById('total-bayar').innerText = 'Rp ' + totalHarga.toLocaleString('id-ID');
+      console.log('Updated: ' + totalItem + ' items, Rp ' + totalHarga);
+    }
+
+    function bayar() {
+      const totalItem = pesanan.espresso + pesanan.latte;
+      if (totalItem === 0) {
+        console.warn('Gagal transaksi: Keranjang kosong!');
+        return;
+      }
+      console.log('Transaksi Sukses! Total diproses:', document.getElementById('total-bayar').innerText);
+      pesanan.espresso = 0;
+      pesanan.latte = 0;
+      document.getElementById('qty-espresso').innerText = 0;
+      document.getElementById('qty-latte').innerText = 0;
+      kalkulasi();
+    }
+  <\/script>
+</body>
+</html>`,
+
+      calculator: `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kalkulator Interaktif</title>
+  <script src="https://cdn.tailwindcss.com"><\/script>
+</head>
+<body class="bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white/10 backdrop-blur-md p-6 rounded-3xl border border-white/20 shadow-2xl w-full max-w-xs text-white">
+    <!-- Layar Kalkulator -->
+    <div class="mb-4 bg-black/40 p-4 rounded-2xl text-right">
+      <div id="histori" class="text-xs text-slate-400 h-4"></div>
+      <div id="layar" class="text-3xl font-mono font-bold truncate">0</div>
+    </div>
+
+    <!-- Tombol -->
+    <div class="grid grid-cols-4 gap-2 text-sm font-semibold">
+      <button onclick="bersihkan()" class="p-3 bg-red-500/30 hover:bg-red-500/50 rounded-xl text-red-200 col-span-2">C</button>
+      <button onclick="hapusSatu()" class="p-3 bg-slate-700/60 hover:bg-slate-600 rounded-xl">DEL</button>
+      <button onclick="tekan('/')" class="p-3 bg-indigo-500/50 hover:bg-indigo-500 rounded-xl">&divide;</button>
+
+      <button onclick="tekan('7')" class="p-3 bg-slate-800/80 hover:bg-slate-700 rounded-xl">7</button>
+      <button onclick="tekan('8')" class="p-3 bg-slate-800/80 hover:bg-slate-700 rounded-xl">8</button>
+      <button onclick="tekan('9')" class="p-3 bg-slate-800/80 hover:bg-slate-700 rounded-xl">9</button>
+      <button onclick="tekan('*')" class="p-3 bg-indigo-500/50 hover:bg-indigo-500 rounded-xl">&times;</button>
+
+      <button onclick="tekan('4')" class="p-3 bg-slate-800/80 hover:bg-slate-700 rounded-xl">4</button>
+      <button onclick="tekan('5')" class="p-3 bg-slate-800/80 hover:bg-slate-700 rounded-xl">5</button>
+      <button onclick="tekan('6')" class="p-3 bg-slate-800/80 hover:bg-slate-700 rounded-xl">6</button>
+      <button onclick="tekan('-')" class="p-3 bg-indigo-500/50 hover:bg-indigo-500 rounded-xl">-</button>
+
+      <button onclick="tekan('1')" class="p-3 bg-slate-800/80 hover:bg-slate-700 rounded-xl">1</button>
+      <button onclick="tekan('2')" class="p-3 bg-slate-800/80 hover:bg-slate-700 rounded-xl">2</button>
+      <button onclick="tekan('3')" class="p-3 bg-slate-800/80 hover:bg-slate-700 rounded-xl">3</button>
+      <button onclick="tekan('+')" class="p-3 bg-indigo-500/50 hover:bg-indigo-500 rounded-xl">+</button>
+
+      <button onclick="tekan('0')" class="p-3 bg-slate-800/80 hover:bg-slate-700 rounded-xl col-span-2">0</button>
+      <button onclick="tekan('.')" class="p-3 bg-slate-800/80 hover:bg-slate-700 rounded-xl">.</button>
+      <button onclick="hitung()" class="p-3 bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold rounded-xl">=</button>
+    </div>
+  </div>
+
+  <script>
+    let current = '0';
+    const display = document.getElementById('layar');
+    const hist = document.getElementById('histori');
+
+    function tekan(val) {
+      if (current === '0' && val !== '.') current = val;
+      else current += val;
+      display.innerText = current;
+    }
+
+    function bersihkan() {
+      current = '0';
+      display.innerText = current;
+      hist.innerText = '';
+    }
+
+    function hapusSatu() {
+      current = current.length > 1 ? current.slice(0, -1) : '0';
+      display.innerText = current;
+    }
+
+    function hitung() {
+      try {
+        hist.innerText = current + ' =';
+        const result = Function('"use strict";return (' + current + ')')();
+        console.log('Kalkulasi:', current, '=', result);
+        current = String(result);
+        display.innerText = current;
+      } catch (err) {
+        console.error('Ekspresi matematika keliru:', err);
+        display.innerText = 'Error';
+        current = '0';
+      }
+    }
+  <\/script>
+</body>
+</html>`,
+
+      game: `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dodge Star Mini Game</title>
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <style>
+    canvas { background: #0f172a; border-radius: 12px; touch-action: none; }
+  </style>
+</head>
+<body class="bg-slate-950 text-white min-h-screen flex flex-col items-center justify-center p-4 font-sans select-none">
+  <div class="text-center mb-3">
+    <h1 class="text-xl font-bold text-amber-400">✨ Dodge Star Game</h1>
+    <p class="text-xs text-slate-400">Gerakkan mouse / sentuh layar untuk menghindari meteor!</p>
+  </div>
+
+  <div class="relative">
+    <canvas id="gameCanvas" width="340" height="420" class="shadow-2xl border border-slate-800"></canvas>
+    <div id="gameOverScreen" class="hidden absolute inset-0 bg-black/80 backdrop-blur-sm rounded-12 flex flex-col items-center justify-center">
+      <div class="text-2xl font-bold text-red-500 mb-1">Game Over!</div>
+      <div id="finalScore" class="text-slate-300 text-sm mb-4">Skor: 0</div>
+      <button onclick="mulaiUlang()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs transition">
+        Main Lagi
+      </button>
+    </div>
+  </div>
+
+  <div class="mt-3 flex justify-between w-[340px] text-xs text-slate-400 font-mono">
+    <span>Skor: <strong id="scoreVal" class="text-amber-400">0</strong></span>
+    <span>Terbaik: <strong id="highScoreVal" class="text-emerald-400">0</strong></span>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreVal = document.getElementById('scoreVal');
+    const highScoreVal = document.getElementById('highScoreVal');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const finalScore = document.getElementById('finalScore');
+
+    let player = { x: 170, y: 360, radius: 12, speed: 6 };
+    let stars = [];
+    let score = 0;
+    let highScore = 0;
+    let isGameOver = false;
+    let spawnRate = 40;
+    let frame = 0;
+
+    function reset() {
+      player.x = canvas.width / 2;
+      player.y = 360;
+      stars = [];
+      score = 0;
+      frame = 0;
+      isGameOver = false;
+      gameOverScreen.classList.add('hidden');
+      scoreVal.innerText = 0;
+      console.log('Game dimulai ulang!');
+    }
+
+    function createStar() {
+      stars.push({
+        x: Math.random() * (canvas.width - 20) + 10,
+        y: -10,
+        radius: Math.random() * 8 + 6,
+        speed: Math.random() * 2.5 + 2
+      });
+    }
+
+    function update() {
+      if (isGameOver) return;
+      frame++;
+      if (frame % spawnRate === 0) createStar();
+
+      // Update skor
+      if (frame % 20 === 0) {
+        score++;
+        scoreVal.innerText = score;
+      }
+
+      // Update Bintang
+      for (let i = 0; i < stars.length; i++) {
+        let s = stars[i];
+        s.y += s.speed;
+
+        // Cek tabrakan
+        let dx = player.x - s.x;
+        let dy = player.y - s.y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < player.radius + s.radius) {
+          isGameOver = true;
+          if (score > highScore) {
+            highScore = score;
+            highScoreVal.innerText = highScore;
+          }
+          finalScore.innerText = 'Skor Anda: ' + score;
+          gameOverScreen.classList.remove('hidden');
+          console.warn('Game Over! Skor akhir: ' + score);
+          return;
+        }
+      }
+      stars = stars.filter(s => s.y < canvas.height + 20);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Gambar pemain (Kapal)
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+      ctx.fillStyle = '#38bdf8';
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = '#0284c7';
+      ctx.fill();
+      ctx.closePath();
+
+      // Gambar rintangan (Bintang)
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = '#f59e0b';
+      stars.forEach(s => {
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#fbbf24';
+        ctx.fill();
+        ctx.closePath();
+      });
+      ctx.shadowBlur = 0;
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    // Kontrol pergerakan
+    function setPos(clientX) {
+      const rect = canvas.getBoundingClientRect();
+      const relativeX = clientX - rect.left;
+      player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, relativeX));
+    }
+
+    canvas.addEventListener('mousemove', e => setPos(e.clientX));
+    canvas.addEventListener('touchmove', e => {
+      if (e.touches.length > 0) {
+        setPos(e.touches[0].clientX);
+      }
+      e.preventDefault();
+    }, { passive: false });
+
+    function mulaiUlang() { reset(); }
+
+    reset();
+    loop();
+  <\/script>
+</body>
+</html>`
+    };
+
+    const codeEditor = document.getElementById('codeEditor');
+    const lineNumbers = document.getElementById('lineNumbers');
+    const previewFrame = document.getElementById('previewFrame');
+    const btnRun = document.getElementById('btnRun');
+    const toggleAutoRun = document.getElementById('toggleAutoRun');
+    const templateSelect = document.getElementById('templateSelect');
+    const fileInput = document.getElementById('fileInput');
+    const btnDownload = document.getElementById('btnDownload');
+    const btnFormat = document.getElementById('btnFormat');
+    const btnCopy = document.getElementById('btnCopy');
+    const btnClear = document.getElementById('btnClear');
+    const btnReloadPreview = document.getElementById('btnReloadPreview');
+    const btnNewTab = document.getElementById('btnNewTab');
+    const btnFullscreen = document.getElementById('btnFullscreen');
+    const viewportContainer = document.getElementById('viewportContainer');
+    const viewportBtns = document.querySelectorAll('.viewport-btn');
+    const codeLengthBadge = document.getElementById('codeLengthBadge');
+    const lineCountEl = document.getElementById('lineCount');
+    
+    // Console UI
+    const consoleOutput = document.getElementById('consoleOutput');
+    const consoleCountBadge = document.getElementById('consoleCountBadge');
+    const btnClearConsole = document.getElementById('btnClearConsole');
+    const btnToggleConsole = document.getElementById('btnToggleConsole');
+    const consolePanel = document.getElementById('consolePanel');
+    const consoleChevron = document.getElementById('consoleChevron');
+
+    let logCounter = 0;
+    let isConsoleCollapsed = false;
+    let autoRunTimer = null;
+
+    function updateLineNumbers() {
+      const lines = codeEditor.value.split('\n').length;
+      let lineText = '';
+      for (let i = 1; i <= lines; i++) {
+        lineText += i + '\n';
+      }
+      lineNumbers.textContent = lineText;
+      lineCountEl.textContent = lines;
+      codeLengthBadge.textContent = codeEditor.value.length.toLocaleString('id-ID') + ' karakter';
+    }
+
+    // Sync scroll textarea with line numbers
+    codeEditor.addEventListener('scroll', () => {
+      lineNumbers.scrollTop = codeEditor.scrollTop;
+    });
+
+    // Handle indentation on Tab key
+    codeEditor.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = codeEditor.selectionStart;
+        const end = codeEditor.selectionEnd;
+        const value = codeEditor.value;
+
+        codeEditor.value = value.substring(0, start) + '  ' + value.substring(end);
+        codeEditor.selectionStart = codeEditor.selectionEnd = start + 2;
+        updateLineNumbers();
+        triggerAutoRun();
+      }
+    });
+
+    codeEditor.addEventListener('input', () => {
+      updateLineNumbers();
+      triggerAutoRun();
+    });
+
+    // Helper to build sandbox HTML document with in-frame error logger & console postMessage
+    function buildSandboxedHTML(rawCode) {
+      const interceptScript = `
+        <script>
+          (function(){
+            function serialize(arg) {
+              if (arg === null) return 'null';
+              if (arg === undefined) return 'undefined';
+              if (typeof arg === 'object') {
+                try {
+                  return JSON.stringify(arg, null, 2);
+                } catch(e) {
+                  return String(arg);
+                }
+              }
+              return String(arg);
+            }
+
+            function dispatchLog(type, args) {
+              try {
+                var message = Array.from(args).map(serialize).join(' ');
+                window.parent.postMessage({
+                  source: 'sandbox-runner',
+                  type: type,
+                  message: message,
+                  time: new Date().toLocaleTimeString('id-ID')
+                }, '*');
+              } catch(err){}
+            }
+
+            var origLog = console.log;
+            var origWarn = console.warn;
+            var origError = console.error;
+            var origInfo = console.info;
+
+            console.log = function() { dispatchLog('log', arguments); origLog.apply(console, arguments); };
+            console.warn = function() { dispatchLog('warn', arguments); origWarn.apply(console, arguments); };
+            console.error = function() { dispatchLog('error', arguments); origError.apply(console, arguments); };
+            console.info = function() { dispatchLog('info', arguments); origInfo.apply(console, arguments); };
+
+            window.addEventListener('error', function(e) {
+              dispatchLog('error', [e.message + ' (Baris: ' + e.lineno + ')']);
+            });
+
+            window.addEventListener('unhandledrejection', function(e) {
+              dispatchLog('error', ['Unhandled Promise Rejection: ' + e.reason]);
+            });
+          })();
+        <\/script>
+      `;
+
+      // Inject the interceptor into head or top of html
+      if (rawCode.includes('<head>')) {
+        return rawCode.replace('<head>', '<head>' + interceptScript);
+      } else if (rawCode.includes('<html>')) {
+        return rawCode.replace('<html>', '<html><head>' + interceptScript + '</head>');
+      } else {
+        return interceptScript + rawCode;
+      }
+    }
+
+    function executeCode() {
+      const code = codeEditor.value;
+      const sandboxed = buildSandboxedHTML(code);
+      
+      // Inject code to iframe srcdoc
+      previewFrame.srcdoc = sandboxed;
+      showToast('Preview diperbarui', 'fa-circle-check text-emerald-400');
+    }
+
+    function triggerAutoRun() {
+      if (!toggleAutoRun.checked) return;
+      clearTimeout(autoRunTimer);
+      autoRunTimer = setTimeout(() => {
+        executeCode();
+      }, 500); // 500ms debounce
+    }
+
+    btnRun.addEventListener('click', () => {
+      executeCode();
+    });
+
+    btnReloadPreview.addEventListener('click', () => {
+      executeCode();
+    });
+
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.source === 'sandbox-runner') {
+        appendConsoleMessage(event.data);
+      }
+    });
+
+    function appendConsoleMessage({ type, message, time }) {
+      logCounter++;
+      consoleCountBadge.textContent = logCounter;
+
+      // Hapus pesan placeholder jika ada
+      const placeholder = consoleOutput.querySelector('.italic');
+      if (placeholder) {
+        placeholder.remove();
+      }
+
+      const logRow = document.createElement('div');
+      logRow.className = 'py-1 px-2 rounded flex items-start space-x-2 border-l-2';
+
+      let icon = 'fa-info-circle text-slate-400';
+      let borderCol = 'border-slate-500 bg-slate-900/40 text-slate-300';
+
+      if (type === 'error') {
+        icon = 'fa-circle-exclamation text-rose-500';
+        borderCol = 'border-rose-500 bg-rose-950/20 text-rose-200';
+      } else if (type === 'warn') {
+        icon = 'fa-triangle-exclamation text-amber-500';
+        borderCol = 'border-amber-500 bg-amber-950/20 text-amber-200';
+      } else if (type === 'info') {
+        icon = 'fa-circle-info text-blue-400';
+        borderCol = 'border-blue-400 bg-blue-950/20 text-blue-200';
+      }
+
+      logRow.className += ' ' + borderCol;
+      logRow.innerHTML = `
+        <span class="text-[9px] text-slate-500 mt-0.5 select-none">[${time}]</span>
+        <i class="fa-solid ${icon} text-[10px] mt-0.5"></i>
+        <pre class="flex-1 whitespace-pre-wrap font-mono text-[11px] leading-tight select-text overflow-x-auto">${escapeHtml(message)}</pre>
+      `;
+
+      consoleOutput.appendChild(logRow);
+      consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+    }
+
+    btnClearConsole.addEventListener('click', () => {
+      consoleOutput.innerHTML = '<div class="text-slate-500 italic select-none">Console siap menerima output log, warning, atau error dari kode...</div>';
+      logCounter = 0;
+      consoleCountBadge.textContent = '0';
+    });
+
+    btnToggleConsole.addEventListener('click', () => {
+      isConsoleCollapsed = !isConsoleCollapsed;
+      if (isConsoleCollapsed) {
+        consolePanel.style.height = '32px';
+        consoleChevron.classList.add('-rotate-90');
+      } else {
+        consolePanel.style.height = '9rem'; // 144px
+        consoleChevron.classList.remove('-rotate-90');
+      }
+    });
+
+    // Open in New Tab
+    btnNewTab.addEventListener('click', () => {
+      const code = codeEditor.value;
+      const blob = new Blob([code], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    });
+
+    // Fullscreen Viewport
+    btnFullscreen.addEventListener('click', () => {
+      const wrapper = document.getElementById('previewWrapper');
+      if (!document.fullscreenElement) {
+        wrapper.requestFullscreen().catch(err => {
+          showToast('Fullscreen tidak didukung di lingkungan ini', 'fa-triangle-exclamation text-amber-400');
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    // Download index.html
+    btnDownload.addEventListener('click', () => {
+      const code = codeEditor.value;
+      const blob = new Blob([code], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'index.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('File index.html berhasil diunduh', 'fa-circle-check text-emerald-400');
+    });
+
+    // Upload file
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        codeEditor.value = event.target.result;
+        updateLineNumbers();
+        executeCode();
+        showToast('File ' + file.name + ' berhasil dibuka!', 'fa-folder-open text-indigo-400');
+      };
+      reader.readAsText(file);
+      e.target.value = ''; // Reset
+    });
+
+    // Copy Code
+    btnCopy.addEventListener('click', () => {
+      codeEditor.select();
+      try {
+        document.execCommand('copy');
+        showToast('Kode berhasil disalin ke clipboard!', 'fa-copy text-indigo-400');
+      } catch (err) {
+        showToast('Gagal menyalin kode', 'fa-triangle-exclamation text-rose-400');
+      }
+    });
+
+    // Clear Code
+    btnClear.addEventListener('click', () => {
+      codeEditor.value = '';
+      updateLineNumbers();
+      previewFrame.srcdoc = '';
+      showToast('Editor dibersihkan', 'fa-trash-can text-slate-300');
+    });
+
+    // Simple Pretty Format / Indentation Fixer
+    btnFormat.addEventListener('click', () => {
+      let content = codeEditor.value;
+      if (!content.trim()) return;
+
+      // Basic tag beautifier for HTML single files
+      let formatted = '';
+      let indent = 0;
+      const tab = '  ';
+
+      // Normalize tags spacing
+      const tokens = content.replace(/>\s*</g, '><').split(/(?=<)|(?<=>)/);
+      for (let i = 0; i < tokens.length; i++) {
+        let token = tokens[i].trim();
+        if (!token) continue;
+
+        if (token.match(/^<\/\w/)) {
+          indent = Math.max(0, indent - 1);
+        }
+
+        formatted += tab.repeat(indent) + token + '\n';
+
+        if (token.match(/^<[^!?\/][^>]*[^\/]>/) && !token.includes('</') && !token.match(/<(input|img|br|hr|meta|link)/i)) {
+          indent++;
+        }
+      }
+
+      codeEditor.value = formatted.trim();
+      updateLineNumbers();
+      showToast('Format kode dirapikan', 'fa-wand-magic-sparkles text-indigo-400');
+    });
+
+    // Template Picker
+    templateSelect.addEventListener('change', (e) => {
+      const key = e.target.value;
+      if (PRESET_TEMPLATES[key] !== undefined) {
+        codeEditor.value = PRESET_TEMPLATES[key];
+        updateLineNumbers();
+        executeCode();
+        showToast('Template dimuat: ' + templateSelect.options[templateSelect.selectedIndex].text, 'fa-bolt text-amber-400');
+      }
+    });
+
+    viewportBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        viewportBtns.forEach(b => {
+          b.classList.remove('bg-indigo-600', 'text-white', 'active');
+          b.classList.add('text-slate-400');
+        });
+        btn.classList.remove('text-slate-400');
+        btn.classList.add('bg-indigo-600', 'text-white', 'active');
+
+        const width = btn.dataset.viewport;
+        viewportContainer.style.width = width;
+      });
+    });
+
+    const resizer = document.getElementById('resizer');
+    const editorPanel = document.getElementById('editorPanel');
+    const previewPanel = document.getElementById('previewPanel');
+
+    let isDragging = false;
+
+    resizer.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      resizer.classList.add('dragging');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const totalWidth = window.innerWidth;
+      const newEditorWidth = (e.clientX / totalWidth) * 100;
+
+      if (newEditorWidth > 20 && newEditorWidth < 80) {
+        editorPanel.style.width = newEditorWidth + '%';
+        previewPanel.style.width = (100 - newEditorWidth) + '%';
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        resizer.classList.remove('dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
+    });
+
+    function showToast(msg, iconClass = 'fa-check') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMsg');
+      const toastIcon = document.getElementById('toastIcon');
+
+      toastMsg.innerText = msg;
+      toastIcon.className = 'fa-solid ' + iconClass;
+
+      toast.classList.remove('translate-y-10', 'opacity-0', 'pointer-events-none');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-10', 'opacity-0', 'pointer-events-none');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }, 2500);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      codeEditor.value = PRESET_TEMPLATES.landing;
+      updateLineNumbers();
+      executeCode();
+    });
+  </script>
+</body>
+</html>
