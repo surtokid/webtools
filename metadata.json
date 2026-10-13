@@ -1,0 +1,9 @@
+{
+  "name": "Presensi Karyawan",
+  "description": "Aplikasi Presensi Karyawan real-time dengan GPS geofence, foto selfie, manajemen shift, pengajuan lembur, libur, sakit, cuti, serta dashboard admin lengkap.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
